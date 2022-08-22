@@ -1,26 +1,18 @@
 #include <stdio.h> 
 #include <string.h> 
-#include <stdlib.h> 
 #include <unistd.h> 
 
 #include <sys/types.h>
 #include <sys/socket.h> 
-
 #include <netinet/in.h>
-#include <netinet/tcp.h> 
-#include <errno.h>
 
-#include <time.h>
-#include <signal.h> 
-#include <arpa/inet.h> 
 
 #define SERVER_PORT 6789
 
 int main(int argc, char **argv) {
     
 	char buf[1024];
-
-	socklen_t len; // socklen_t unsigned int
+	socklen_t len = sizeof(buf);
 	
     int sock = socket(AF_INET, SOCK_STREAM, 0);
 	if (sock == -1) {
@@ -28,8 +20,6 @@ int main(int argc, char **argv) {
 		return -1;
 	} 
 
-	len = sizeof(buf); 
-    
 	struct sockaddr_in serverAddress;
 	memset(&serverAddress, 0, sizeof(serverAddress));
 	socklen_t len2 = sizeof(serverAddress);
@@ -60,43 +50,35 @@ int main(int argc, char **argv) {
             return -1;
         }
 
+		// extract page request
 		char* piece = strtok(buf, " ");
     	piece = strtok(NULL, " ");
 		char toOpen[100];
 		strncpy(toOpen, piece + 1, strlen(piece) - 1);
 
+
 		FILE *fp = NULL;
 		char sbuffer[1000];
 		char *filename = toOpen;
 
-		printf("filename: %s\n", filename);
-
-
-		if (filename == NULL) {
-			printf("filename not found.\n");
-			continue;
-		}
-
 		fp = fopen(filename, "r");
 
 		if(fp == NULL) {
-			perror("Error in reading file");
+			printf("filename: %s, not found.\n", filename);
 			continue;
 		}
 
 		char* okHeader = "HTTP/1.1 200 OK\n\n";
-		int sent;
 
 		if(send(acpt, okHeader, strlen(okHeader), 0) == -1) {
             perror("send");
         }
-		printf("ss: %d\n", sent);
 
-		int s;
+		// send html file
+		int sent;
 		while (fread(sbuffer, sizeof(char), 1000, fp) > 0) {
 			sent = send(acpt, sbuffer, strlen(sbuffer), 0);
 			memset(&sbuffer, 0, sizeof(sbuffer));
-			printf("xxx\n");
 			if (sent < 0) {
 				fclose(fp);
 			}		  
